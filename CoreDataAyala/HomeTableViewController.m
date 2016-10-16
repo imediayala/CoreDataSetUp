@@ -7,6 +7,7 @@
 //
 
 #import "HomeTableViewController.h"
+#import "UpdateViewController.h"
 #import "AppDelegate.h"
 
 @interface HomeTableViewController ()
@@ -60,7 +61,7 @@
 }
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
-#warning Incomplete implementation, return the number of rows
+// Incomplete implementation, return the number of rows
     return self.receipes.count;
 }
 
@@ -74,6 +75,47 @@
     [cell.textLabel setText:[NSString stringWithFormat:@"%@", [receipe valueForKey:@"name"]]];
     
     return cell;
+}
+
+
+- (void)tableView:(UITableView *)tableView commitEditingStyle:(UITableViewCellEditingStyle)editingStyle forRowAtIndexPath:(NSIndexPath *)indexPath{
+    
+    NSManagedObjectContext *context = [self managedObjectContext];
+    
+    if (editingStyle == UITableViewCellEditingStyleDelete) {
+        // Delete object from database
+        [context deleteObject:[self.receipes objectAtIndex:indexPath.row]];
+        
+        NSError *error = nil;
+        if (![context save:&error]) {
+            NSLog(@"Can't Delete! %@ %@", error, [error localizedDescription]);
+            return;
+        }
+        
+        // Remove device from table view
+        [self.receipes removeObjectAtIndex:indexPath.row];
+        [self.tableView deleteRowsAtIndexPaths:[NSArray arrayWithObject:indexPath] withRowAnimation:UITableViewRowAnimationFade];
+    }
+    
+}
+
+
+-(void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath{
+
+    
+    [self performSegueWithIdentifier:@"updateRecipe" sender:indexPath];
+
+
+}
+
+
+- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender
+{
+    if ([[segue identifier] isEqualToString:@"updateRecipe"]) {
+        NSManagedObject *selectedDevice = [self.receipes objectAtIndex:[[self.tableView indexPathForSelectedRow] row]];
+        UpdateViewController *destViewController = segue.destinationViewController;
+        destViewController.receipe = selectedDevice;
+    }
 }
 
 /*
